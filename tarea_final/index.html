@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+ <html lang="es">
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Chat en Tiempo Real</title>
+     <script src="/socket.io/socket.io.js"></script>
+     <style>
+         body { font-family: Arial, sans-serif; text-align: center; }
+         #mensajes { border: 1px solid #ccc; height: 200px; overflow-y: auto; margin-bottom: 10px; padding: 10px; }
+         #estado { font-weight: bold; color: green; }
+     </style>
+ </head>
+ <body>
+     <h2>Chat en Tiempo Real</h2>
+     <div id="estado">Estado: Conectado</div>
+     <div id="mensajes"></div>
+     <input type="text" id="mensaje" placeholder="Escribe un mensaje...">
+     <button onclick="enviarMensaje()">Enviar</button>
+ 
+     <h2>Precio en Tiempo Real</h2>
+     <p>Precio Actual: <span id="precio">-</span></p>
+     <button onclick="actualizarPrecio()">Actualizar Precio</button>
+ 
+     <script>
+         const socket = io();
+         const mensajesDiv = document.getElementById('mensajes');
+         const precioSpan = document.getElementById('precio');
+         const estadoDiv = document.getElementById('estado');
+ 
+         function agregarMensaje(mensaje) {
+             const p = document.createElement('p');
+             p.textContent = mensaje;
+             mensajesDiv.appendChild(p);
+             mensajesDiv.scrollTop = mensajesDiv.scrollHeight;
+         }
+ 
+         
+         function enviarMensaje() {
+             const mensajeInput = document.getElementById('mensaje');
+             const mensaje = mensajeInput.value.trim();
+             if (mensaje) {
+                 socket.emit('mensaje', mensaje);
+                 mensajeInput.value = '';
+             }
+         }
+ 
+        
+         socket.on('mensaje', (msg) => {
+             agregarMensaje(`Usuario: ${msg}`);
+         });
+ 
+         
+         socket.on('usuario-conectado', (msg) => {
+             agregarMensaje(`🔔 ${msg}`);
+         });
+ 
+         socket.on('usuario-desconectado', (msg) => {
+             agregarMensaje(`❌ ${msg}`);
+         });
+ 
+         
+         socket.on('connect', () => {
+             estadoDiv.textContent = "Estado: Conectado";
+             estadoDiv.style.color = "green";
+         });
+ 
+         socket.on('disconnect', () => {
+             estadoDiv.textContent = "Estado: Desconectado";
+             estadoDiv.style.color = "red";
+         });
+ 
+         function actualizarPrecio() {
+             const nuevoPrecio = (Math.random() * 100).toFixed(2);
+             socket.emit('actualizar-precio', nuevoPrecio);
+         }
+ 
+         socket.on('precio-actualizado', (precio) => {
+             precioSpan.textContent = `$${precio}`;
+         });
+     </script>
+ </body>
+ </html>
